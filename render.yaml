@@ -8,13 +8,13 @@ services:
     healthCheckPath: /health
     envVars:
       - key: MC_HOST
-        sync: false
+        value: "play.gamerpointmc.qzz.io"
       - key: MC_PORT
         value: "25565"
       - key: MC_VERSION
         value: "1.21.11"
       - key: BOT_COUNT
-        value: "1"
+        value: "1000"
       - key: RECONNECT_DELAY
         value: "10000"
       - key: PANEL_PASSWORD
