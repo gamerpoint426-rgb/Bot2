@@ -1,0 +1,8 @@
+{
+  "bots": [
+    {
+      "id": "bot-1",
+      "enabled": true
+    }
+  ]
+}

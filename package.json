@@ -1,0 +1,18 @@
+{
+  "name": "mc-bot-manager",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mineflayer multi-bot manager with a local web panel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mineflayer": "^4.30.0"
+  }
+}
