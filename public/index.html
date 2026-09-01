@@ -55,7 +55,7 @@ pre{white-space:pre-wrap;max-height:220px;overflow:auto;background:#0c0f14;paddi
 <button class="danger" onclick="post('/api/stop-all')">⏹ Stop All</button>
 <button onclick="addBot()">➕ Add Bot</button>
 <label class="muted" style="display:flex;align-items:center;gap:6px">Bots:
-<input id="count" type="number" min="0" max="10000" value="1">
+<input id="count" type="number" min="0" max="100" value="1">
 <button onclick="setCount()">Apply</button></label>
 </div>
 <div id="summary" class="muted" style="margin-bottom:12px"></div>
@@ -66,6 +66,7 @@ pre{white-space:pre-wrap;max-height:220px;overflow:auto;background:#0c0f14;paddi
 <script>
 let password="";
 let authRequired=false;
+const openLogs=new Set();
 
 async function api(url, options={}) {
   options.headers = {...(options.headers||{}), ...(password ? {"x-panel-password":password}:{}), "content-type":"application/json"};
@@ -85,7 +86,7 @@ function card(b){
   return `<div class="card">
     <div class="row"><span class="name">${esc(b.name)}</span><span class="badge ${esc(b.status)}">${esc(b.status)}</span></div>
     <div class="meta">
-      ID: ${esc(b.id)}<br>
+      Number: ${b.number}<br>ID: ${esc(b.id)}<br>
       Reconnects: ${b.reconnects}<br>
       Connected: ${b.connectedAt ? new Date(b.connectedAt).toLocaleString() : "—"}<br>
       Last event: ${esc(b.lastEvent)}
@@ -94,15 +95,22 @@ function card(b){
     <div class="actions">
       <button class="primary" onclick="post('/api/bots/${b.id}/start')">▶ Start</button>
       <button class="danger" onclick="post('/api/bots/${b.id}/stop')">⏹ Stop</button>
-      <button onclick="logs('${b.id}')">📜 Logs</button>
+      <button onclick="toggleLogs('${b.id}')">📜 Logs</button>
       <button onclick="removeBot('${b.id}')">🗑 Remove</button>
     </div>
     <pre id="log-${b.id}" style="display:none"></pre>
   </div>`;
 }
-async function logs(id){
-  const x=await api("/api/logs/"+id);const el=document.querySelector("#log-"+id);
-  el.style.display=el.style.display==="none"?"block":"none";el.textContent=x.logs.join("\\n");
+async function toggleLogs(id){
+  const el=document.querySelector("#log-"+id);
+  if(!el) return;
+  if(openLogs.has(id)){ openLogs.delete(id); el.style.display="none"; return; }
+  openLogs.add(id); el.style.display="block"; await refreshLogs(id);
+}
+async function refreshLogs(id){
+  if(!openLogs.has(id)) return;
+  const el=document.querySelector("#log-"+id); if(!el) return;
+  try{ const x=await api("/api/logs/"+id); el.textContent=x.logs.join("\n"); el.scrollTop=el.scrollHeight; }catch(e){}
 }
 async function removeBot(id){if(confirm("Remove this bot?")){await api("/api/bots/"+id,{method:"DELETE"});refresh()}}
 async function saveServer(){
@@ -129,10 +137,12 @@ async function refresh(){
   const s=await api("/api/state");
   authRequired=false;showApp();
   document.querySelector("#serverInfo").textContent=`Server: ${s.server.host}:${s.server.port} • Version: ${s.server.version} • Reconnect: ${s.reconnectDelay/1000}s`;
-  document.querySelector("#count").value=s.bots.length;
+  const countInput=document.querySelector("#count");
+  if(document.activeElement !== countInput) countInput.value=s.bots.length;
   const online=s.bots.filter(b=>b.status==="online").length;
   document.querySelector("#summary").textContent=`${online}/${s.bots.length} bots online`;
   document.querySelector("#grid").innerHTML=s.bots.map(card).join("");
+  for(const b of s.bots) if(openLogs.has(b.id)) refreshLogs(b.id);
 }
 refresh().then(loadConfig).catch(e=>{if(!authRequired) showLogin()});
 setInterval(()=>refresh().catch(()=>{}),3000);
