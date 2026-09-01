@@ -20,7 +20,7 @@ services:
       - key: PANEL_PASSWORD
         sync: false
       - key: BOT_NAMES
-        value: "GP_AFK,GP_Player,GP_Lobby,GP_Online,GP_Survival"
+        value: "b_0t_17,bot39281,b0t_2,b0t_4737,batsk83,fjs_256"
       - key: JOIN_COMMAND
         value: ""
       - key: LOGIN_COMMAND
