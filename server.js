@@ -11,7 +11,7 @@ const server = http.createServer(app);
 
 const PORT = Number(process.env.PORT || process.env.PANEL_PORT || 3000);
 const HOST = process.env.PANEL_HOST || "0.0.0.0";
-let MC_HOST = process.env.MC_HOST || "localhost";
+let MC_HOST = process.env.MC_HOST || "play.gamerpointmc.qzz.io";
 let MC_PORT = Number(process.env.MC_PORT || 25565);
 let MC_VERSION = process.env.MC_VERSION || false;
 const RECONNECT_DELAY = Math.max(1000, Number(process.env.RECONNECT_DELAY || 10000));
@@ -20,10 +20,10 @@ const PANEL_PASSWORD = process.env.PANEL_PASSWORD || "";
 const JOIN_COMMAND = process.env.JOIN_COMMAND || "";
 const LOGIN_COMMAND = process.env.LOGIN_COMMAND || "";
 
-const configuredNames = (process.env.BOT_NAMES || "GP_AFK")
+const configuredNames = (process.env.BOT_NAMES || "b_0t")
   .split(",").map(s => s.trim()).filter(Boolean);
 
-const botCount = Math.max(0, Number(process.env.BOT_COUNT || 1));
+const botCount = Math.max(0, Number(process.env.BOT_COUNT || 100));
 const bots = new Map();
 
 function makeId() {
@@ -32,7 +32,7 @@ function makeId() {
 
 function randomName() {
   const base = configuredNames[Math.floor(Math.random() * configuredNames.length)];
-  const suffix = Math.floor(100 + Math.random() * 900);
+  const suffix = Math.floor(1 + Math.random() * 9);
   return `${base}_${suffix}`;
 }
 
