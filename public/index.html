@@ -1,1 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MC Bot Manager</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0f1117;color:#f4f7fb}
+header{padding:18px 20px;border-bottom:1px solid #252a35;background:#151821;position:sticky;top:0;z-index:5}
+h1{font-size:20px;margin:0 0 5px}.muted{color:#9ba4b2;font-size:13px}
+.wrap{max-width:1100px;margin:auto;padding:18px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+button,input{font:inherit;border-radius:9px;border:1px solid #303746;padding:9px 12px;background:#1a1f2a;color:#fff}
+button{cursor:pointer}button:hover{background:#232a38}.danger{border-color:#6a2d35}.primary{border-color:#315f9b}
+input{width:90px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.card{background:#151a23;border:1px solid #272e3b;border-radius:14px;padding:15px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.name{font-weight:700}.badge{font-size:12px;padding:4px 8px;border-radius:99px;background:#303746}.online{background:#174f37;color:#8df2bd}.connecting{background:#55451b;color:#ffe19a}.offline,.stopped{background:#3a2024;color:#ffabb5}
+.meta{margin:12px 0;color:#aab3c1;font-size:13px;line-height:1.6}
+.actions{display:flex;gap:7px;flex-wrap:wrap}.actions button{font-size:13px}
+pre{white-space:pre-wrap;max-height:220px;overflow:auto;background:#0c0f14;padding:10px;border-radius:9px;color:#cbd4df;font-size:12px}
+#login{max-width:360px;margin:80px auto;background:#151a23;padding:20px;border-radius:14px;border:1px solid #272e3b}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div id="login" class="hidden">
+<h2>Panel login</h2><p class="muted">Enter the panel password.</p>
+<input id="pw" type="password" style="width:100%;margin:8px 0">
+<button class="primary" onclick="login()">Login</button>
+<div id="loginErr" class="muted"></div>
+</div>
 
+<div id="app" class="hidden">
+<header><div class="wrap">
+<h1>⛏️ Minecraft Bot Manager</h1>
+<div id="serverInfo" class="muted"></div>
+</div></header>
+<main class="wrap">
+<div class="toolbar">
+<button class="primary" onclick="post('/api/start-all')">▶ Start All</button>
+<button class="danger" onclick="post('/api/stop-all')">⏹ Stop All</button>
+<button onclick="addBot()">➕ Add Bot</button>
+<label class="muted" style="display:flex;align-items:center;gap:6px">Bots:
+<input id="count" type="number" min="0" max="100" value="1">
+<button onclick="setCount()">Apply</button></label>
+</div>
+<div id="summary" class="muted" style="margin-bottom:12px"></div>
+<div id="grid" class="grid"></div>
+</main>
+</div>
+
+<script>
+let password="";
+let authRequired=false;
+
+async function api(url, options={}) {
+  options.headers = {...(options.headers||{}), ...(password ? {"x-panel-password":password}:{}), "content-type":"application/json"};
+  const r=await fetch(url,options);
+  if(r.status===401){authRequired=true;showLogin();throw new Error("Unauthorized")}
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function post(url,body={}){try{await api(url,{method:"POST",body:JSON.stringify(body)});refresh()}catch(e){alert(e.message)}}
+function showLogin(){document.querySelector("#login").classList.remove("hidden");document.querySelector("#app").classList.add("hidden")}
+function showApp(){document.querySelector("#login").classList.add("hidden");document.querySelector("#app").classList.remove("hidden")}
+async function login(){password=document.querySelector("#pw").value;try{await refresh();showApp()}catch(e){document.querySelector("#loginErr").textContent="Wrong password or panel unavailable."}}
+async function addBot(){try{await api("/api/bots",{method:"POST",body:"{}"});refresh()}catch(e){alert(e.message)}}
+async function setCount(){post("/api/bots/count",{count:Number(document.querySelector("#count").value)})}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function card(b){
+  return `<div class="card">
+    <div class="row"><span class="name">${esc(b.name)}</span><span class="badge ${esc(b.status)}">${esc(b.status)}</span></div>
+    <div class="meta">
+      ID: ${esc(b.id)}<br>
+      Reconnects: ${b.reconnects}<br>
+      Connected: ${b.connectedAt ? new Date(b.connectedAt).toLocaleString() : "—"}<br>
+      Last event: ${esc(b.lastEvent)}
+      ${b.lastError ? "<br>Error: "+esc(b.lastError):""}
+    </div>
+    <div class="actions">
+      <button class="primary" onclick="post('/api/bots/${b.id}/start')">▶ Start</button>
+      <button class="danger" onclick="post('/api/bots/${b.id}/stop')">⏹ Stop</button>
+      <button onclick="logs('${b.id}')">📜 Logs</button>
+      <button onclick="removeBot('${b.id}')">🗑 Remove</button>
+    </div>
+    <pre id="log-${b.id}" style="display:none"></pre>
+  </div>`;
+}
+async function logs(id){
+  const x=await api("/api/logs/"+id);const el=document.querySelector("#log-"+id);
+  el.style.display=el.style.display==="none"?"block":"none";el.textContent=x.logs.join("\\n");
+}
+async function removeBot(id){if(confirm("Remove this bot?")){await api("/api/bots/"+id,{method:"DELETE"});refresh()}}
+async function refresh(){
+  const s=await api("/api/state");
+  authRequired=false;showApp();
+  document.querySelector("#serverInfo").textContent=`Server: ${s.server.host}:${s.server.port} • Version: ${s.server.version} • Reconnect: ${s.reconnectDelay/1000}s`;
+  document.querySelector("#count").value=s.bots.length;
+  const online=s.bots.filter(b=>b.status==="online").length;
+  document.querySelector("#summary").textContent=`${online}/${s.bots.length} bots online`;
+  document.querySelector("#grid").innerHTML=s.bots.map(card).join("");
+}
+refresh().catch(e=>{if(!authRequired) showLogin()});
+setInterval(()=>refresh().catch(()=>{}),3000);
+</script>
+</body>
+</html>
