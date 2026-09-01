@@ -11,7 +11,7 @@ const server = http.createServer(app);
 
 const PORT = Number(process.env.PORT || process.env.PANEL_PORT || 3000);
 const HOST = process.env.PANEL_HOST || "0.0.0.0";
-let MC_HOST = process.env.MC_HOST || "localhost";
+let MC_HOST = process.env.MC_HOST || "play.gamerpointmc.qzz.io";
 let MC_PORT = Number(process.env.MC_PORT || 25565);
 let MC_VERSION = process.env.MC_VERSION || false;
 const RECONNECT_DELAY = Math.max(1000, Number(process.env.RECONNECT_DELAY || 10000));
@@ -20,9 +20,9 @@ const PANEL_PASSWORD = process.env.PANEL_PASSWORD || "";
 const JOIN_COMMAND = process.env.JOIN_COMMAND || "";
 const LOGIN_COMMAND = process.env.LOGIN_COMMAND || "";
 
-const BOT_NAME_PREFIX = process.env.BOT_NAME_PREFIX || "GP_Bot";
+const BOT_NAME_PREFIX = process.env.BOT_NAME_PREFIX || "B0_t";
 
-const botCount = Math.max(0, Number(process.env.BOT_COUNT || 1));
+const botCount = Math.max(0, Number(process.env.BOT_COUNT || 1000));
 const bots = new Map();
 
 function makeId() {
