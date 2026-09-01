@@ -11,9 +11,9 @@ const server = http.createServer(app);
 
 const PORT = Number(process.env.PORT || process.env.PANEL_PORT || 3000);
 const HOST = process.env.PANEL_HOST || "0.0.0.0";
-const MC_HOST = process.env.MC_HOST || "localhost";
-const MC_PORT = Number(process.env.MC_PORT || 25565);
-const MC_VERSION = process.env.MC_VERSION || false;
+let MC_HOST = process.env.MC_HOST || "localhost";
+let MC_PORT = Number(process.env.MC_PORT || 25565);
+let MC_VERSION = process.env.MC_VERSION || false;
 const RECONNECT_DELAY = Math.max(1000, Number(process.env.RECONNECT_DELAY || 10000));
 const LOGIN_DELAY = Math.max(500, Number(process.env.LOGIN_DELAY || 2500));
 const PANEL_PASSWORD = process.env.PANEL_PASSWORD || "";
@@ -230,6 +230,42 @@ function authorized(req, res, next) {
 }
 
 app.get("/health", (req, res) => res.status(200).send("ok"));
+
+app.get("/api/config", authorized, (req, res) => {
+  res.json({ host: MC_HOST, port: MC_PORT, version: MC_VERSION || "auto" });
+});
+
+app.post("/api/config/server", authorized, (req, res) => {
+  const host = String(req.body.host || "").trim();
+  const port = Number(req.body.port || 25565);
+  const version = String(req.body.version || "auto").trim();
+
+  if (!host || !/^[a-zA-Z0-9._:-]+$/.test(host))
+    return res.status(400).json({ error: "Invalid server address" });
+  if (!Number.isInteger(port) || port < 1 || port > 65535)
+    return res.status(400).json({ error: "Invalid port" });
+
+  MC_HOST = host;
+  MC_PORT = port;
+  MC_VERSION = version === "auto" ? false : version;
+
+  for (const b of bots.values()) {
+    if (b.enabled) {
+      b.generation++;
+      if (b.timer) clearTimeout(b.timer);
+      b.timer = null;
+      if (b.bot) {
+        try { b.bot.quit("server address changed from panel"); } catch {}
+        b.bot = null;
+      }
+      b.status = "offline";
+      b.connectedAt = null;
+      addLog(b, `Server changed to ${MC_HOST}:${MC_PORT}`);
+      connect(b.id);
+    }
+  }
+  res.json({ ok: true, host: MC_HOST, port: MC_PORT, version: MC_VERSION || "auto" });
+});
 
 app.get("/api/state", authorized, (req, res) => {
   res.json({

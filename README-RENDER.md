@@ -13,3 +13,4 @@ Do not commit `.env` or real passwords.
 
 ## Important
 This is a Web Service because the panel needs HTTP. Render Free web services have limitations and are not a reliable choice for genuine 24/7 bot uptime. For continuous operation, use an always-on paid service. Render Background Workers are also suitable for continuous bot processes, but a separate Web Service is needed for the panel.
+\n## Change server from the panel\n\nUse **🌐 Server Connection** in the web panel to change the Minecraft hostname/IP, port, and version. Press **Save & Reconnect** and enabled bots reconnect to the new target. This runtime setting resets to the Render environment variables if the service restarts.\n
