@@ -110,3 +110,6 @@ For real 24/7 operation, a VPS/Linux host is more reliable.
 Do not expose the panel publicly without a password and preferably a firewall/reverse proxy. Port 3000 is the web panel, not the Minecraft port.
 
 This project is intended for servers you own or have permission to automate.
+
+### Sequential bot names
+Bots use stable sequential names from `BOT_NAME_PREFIX`, such as `GP_Bot1`, `GP_Bot2`, `GP_Bot3`. A reconnect keeps the same bot number/name. Adding a bot uses the next free number. The panel also keeps an opened Logs window open across automatic refreshes and does not overwrite the Bot Count field while you are typing.

@@ -8,19 +8,19 @@ services:
     healthCheckPath: /health
     envVars:
       - key: MC_HOST
-        value: "play.gamerpointmc.qzz.io"
+        sync: false
       - key: MC_PORT
         value: "25565"
       - key: MC_VERSION
         value: "1.21.11"
       - key: BOT_COUNT
-        value: "1000"
+        value: "1"
       - key: RECONNECT_DELAY
         value: "10000"
       - key: PANEL_PASSWORD
         sync: false
       - key: BOT_NAMES
-        value: "b_0t_17,bot39281,b0t_2,b0t_4737,batsk83,fjs_256"
+        value: "GP_AFK,GP_Player,GP_Lobby,GP_Online,GP_Survival"
       - key: JOIN_COMMAND
         value: ""
       - key: LOGIN_COMMAND

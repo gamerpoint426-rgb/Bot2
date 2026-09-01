@@ -11,7 +11,7 @@ const server = http.createServer(app);
 
 const PORT = Number(process.env.PORT || process.env.PANEL_PORT || 3000);
 const HOST = process.env.PANEL_HOST || "0.0.0.0";
-let MC_HOST = process.env.MC_HOST || "play.gamerpointmc.qzz.io";
+let MC_HOST = process.env.MC_HOST || "localhost";
 let MC_PORT = Number(process.env.MC_PORT || 25565);
 let MC_VERSION = process.env.MC_VERSION || false;
 const RECONNECT_DELAY = Math.max(1000, Number(process.env.RECONNECT_DELAY || 10000));
@@ -20,21 +20,26 @@ const PANEL_PASSWORD = process.env.PANEL_PASSWORD || "";
 const JOIN_COMMAND = process.env.JOIN_COMMAND || "";
 const LOGIN_COMMAND = process.env.LOGIN_COMMAND || "";
 
-const configuredNames = (process.env.BOT_NAMES || "b_0t")
-  .split(",").map(s => s.trim()).filter(Boolean);
+const BOT_NAME_PREFIX = process.env.BOT_NAME_PREFIX || "GP_Bot";
 
-const botCount = Math.max(0, Number(process.env.BOT_COUNT || 100));
+const botCount = Math.max(0, Number(process.env.BOT_COUNT || 1));
 const bots = new Map();
 
 function makeId() {
   return crypto.randomBytes(4).toString("hex");
 }
 
-function randomName() {
-  const base = configuredNames[Math.floor(Math.random() * configuredNames.length)];
-  const suffix = Math.floor(1 + Math.random() * 9);
-  return `${base}_${suffix}`;
+function seriesName(number) {
+  return `${BOT_NAME_PREFIX}${number}`;
 }
+
+function nextBotNumber() {
+  const used = new Set([...bots.values()].map(b => b.number));
+  let n = 1;
+  while (used.has(n)) n++;
+  return n;
+}
+
 
 function now() {
   return new Date().toISOString();
@@ -44,6 +49,7 @@ function publicState(b) {
   return {
     id: b.id,
     name: b.name,
+    number: b.number,
     status: b.status,
     enabled: b.enabled,
     connectedAt: b.connectedAt,
@@ -63,10 +69,11 @@ function addLog(b, message) {
   console.log(`[${b.name}] ${message}`);
 }
 
-function createBotRecord(id) {
+function createBotRecord(id, number) {
   return {
     id,
-    name: randomName(),
+    number,
+    name: seriesName(number),
     status: "stopped",
     enabled: true,
     connectedAt: null,
@@ -98,7 +105,7 @@ function connect(id) {
 
   b.generation++;
   const generation = b.generation;
-  b.name = randomName();
+  b.name = seriesName(b.number);
   b.status = "connecting";
   b.lastError = null;
   addLog(b, `Connecting as ${b.name} to ${MC_HOST}:${MC_PORT}`);
@@ -205,8 +212,9 @@ function startBot(id) {
 function ensureCount(count) {
   count = Math.max(0, Math.min(100, Number(count) || 0));
   while (bots.size < count) {
-    const id = `bot-${makeId()}`;
-    bots.set(id, createBotRecord(id));
+    const number = nextBotNumber();
+    const id = `bot-${number}-${makeId()}`;
+    bots.set(id, createBotRecord(id, number));
   }
   while (bots.size > count) {
     const id = [...bots.keys()].pop();
@@ -216,8 +224,9 @@ function ensureCount(count) {
 }
 
 for (let i = 0; i < botCount; i++) {
-  const id = `bot-${i + 1}`;
-  bots.set(id, createBotRecord(id));
+  const number = i + 1;
+  const id = `bot-${number}`;
+  bots.set(id, createBotRecord(id, number));
 }
 
 app.use(express.json());
@@ -309,8 +318,9 @@ app.post("/api/bots/count", authorized, (req, res) => {
 });
 
 app.post("/api/bots", authorized, (req, res) => {
-  const id = `bot-${makeId()}`;
-  bots.set(id, createBotRecord(id));
+  const number = nextBotNumber();
+  const id = `bot-${number}-${makeId()}`;
+  bots.set(id, createBotRecord(id, number));
   res.json(publicState(bots.get(id)));
 });
 
