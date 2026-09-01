@@ -38,6 +38,18 @@ pre{white-space:pre-wrap;max-height:220px;overflow:auto;background:#0c0f14;paddi
 <div id="serverInfo" class="muted"></div>
 </div></header>
 <main class="wrap">
+<div class="card" style="margin-bottom:16px">
+  <div class="row"><strong>🌐 Server Connection</strong><span class="muted">Change server from panel</span></div>
+  <div style="display:grid;grid-template-columns:1fr 110px 130px;gap:8px;margin-top:10px">
+    <input id="host" placeholder="Server IP / hostname" style="width:100%">
+    <input id="port" type="number" min="1" max="65535" placeholder="25565" style="width:100%">
+    <input id="version" placeholder="1.21.11 / auto" style="width:100%">
+  </div>
+  <div class="actions" style="margin-top:9px">
+    <button class="primary" onclick="saveServer()">💾 Save & Reconnect</button>
+    <span id="configMsg" class="muted"></span>
+  </div>
+</div>
 <div class="toolbar">
 <button class="primary" onclick="post('/api/start-all')">▶ Start All</button>
 <button class="danger" onclick="post('/api/stop-all')">⏹ Stop All</button>
@@ -93,6 +105,26 @@ async function logs(id){
   el.style.display=el.style.display==="none"?"block":"none";el.textContent=x.logs.join("\\n");
 }
 async function removeBot(id){if(confirm("Remove this bot?")){await api("/api/bots/"+id,{method:"DELETE"});refresh()}}
+async function saveServer(){
+  const host=document.querySelector("#host").value.trim();
+  const port=Number(document.querySelector("#port").value||25565);
+  const version=document.querySelector("#version").value.trim()||"auto";
+  const msg=document.querySelector("#configMsg");
+  msg.textContent="Saving...";
+  try{
+    const r=await api("/api/config/server",{method:"POST",body:JSON.stringify({host,port,version})});
+    msg.textContent=`Target: ${r.host}:${r.port}`;
+    await refresh();
+  }catch(e){msg.textContent=e.message}
+}
+async function loadConfig(){
+  try{
+    const c=await api("/api/config");
+    document.querySelector("#host").value=c.host;
+    document.querySelector("#port").value=c.port;
+    document.querySelector("#version").value=c.version;
+  }catch(e){}
+}
 async function refresh(){
   const s=await api("/api/state");
   authRequired=false;showApp();
@@ -102,7 +134,7 @@ async function refresh(){
   document.querySelector("#summary").textContent=`${online}/${s.bots.length} bots online`;
   document.querySelector("#grid").innerHTML=s.bots.map(card).join("");
 }
-refresh().catch(e=>{if(!authRequired) showLogin()});
+refresh().then(loadConfig).catch(e=>{if(!authRequired) showLogin()});
 setInterval(()=>refresh().catch(()=>{}),3000);
 </script>
 </body>
