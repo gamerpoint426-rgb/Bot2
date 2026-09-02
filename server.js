@@ -20,7 +20,7 @@ const PANEL_PASSWORD = process.env.PANEL_PASSWORD || "";
 const JOIN_COMMAND = process.env.JOIN_COMMAND || "";
 const LOGIN_COMMAND = process.env.LOGIN_COMMAND || "";
 
-const BOT_NAME_PREFIX = process.env.BOT_NAME_PREFIX || "GP_Bot";
+const BOT_NAME_PREFIX = process.env.BOT_NAME_PREFIX || "_Bot";
 
 const botCount = Math.max(0, Number(process.env.BOT_COUNT || 1000));
 const bots = new Map();
